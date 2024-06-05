@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Page</title>
+</head>
+<body>
+    <h1>Task: Record customer</h1>
+    <p>Record your pitch:</p>
+    <button id="record-btn">Record</button>
+    <button id="stop-btn" disabled>Stop</button>
+    <audio id="audio-playback" controls></audio>
+    <button id="submit-btn" disabled>Submit</button>
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const recordButton = document.getElementById('record-btn');
+        const stopButton = document.getElementById('stop-btn');
+        const submitButton = document.getElementById('submit-btn');
+        const audioPlayback = document.getElementById('audio-playback');
+
+        recordButton.addEventListener('click', async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayback.src = audioUrl;
+                submitButton.disabled = false;
+            };
+            recordButton.disabled = true;
+            stopButton.disabled = false;
+        });
+
+        stopButton.addEventListener('click', () => {
+            mediaRecorder.stop();
+            recordButton.disabled = false;
+            stopButton.disabled = true;
+        });
+
+        submitButton.addEventListener('click', async () => {
+    const userId = localStorage.getItem('userId');
+    const taskId = 1;
+    const formData = new FormData();
+    formData.append('userId', userId);
+    formData.append('taskId', taskId);
+    formData.append('audio', new Blob(audioChunks, { type: 'audio/wav' }));
+
+    const response = await fetch('http://localhost:3000/api/submissions', {
+        method: 'POST',
+        body: formData
+    });
+    if (response.ok) {
+        const result = await response.json();
+        localStorage.setItem('submissionId', result.submissionId);
+        console.log("inside ok");
+        window.location.href = 'feedback.html';
+    } else {
+        console.error('Error:', response.statusText);
+    }
+});
+
+    </script>
+</body>
+</html>

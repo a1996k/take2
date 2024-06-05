@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feedback Page</title>
+</head>
+<body>
+    <h1>Feedback</h1>
+    <p id="feedback-message">Your score: <span id="score"></span>/10</p>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const submissionId = localStorage.getItem('submissionId');
+            const response = await fetch(`/api/submissions/${submissionId}`);
+            const result = await response.json();
+            document.getElementById('score').textContent = result.score;
+        });
+    </script>
+</body>
+</html>
