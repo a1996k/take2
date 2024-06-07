@@ -1,11 +1,13 @@
-// app.js
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const { Sequelize, DataTypes } = require('sequelize');
-const { OpenAIApi, Configuration } = require('openai'); //
+// const { Configuration, OpenAIApi } = require('openai');
+// V3 to V4 update
+const { OpenAI } = require('openai');
+// import OpenAI from 'https://deno.land/x/openai@v4.49.1/mod.ts';
 require('dotenv').config();
 
 // Initialize Express
@@ -13,12 +15,19 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// const configuration = new Configuration ({
-//     apiKey: '',
+// const configuration = new Configuration({
+//     apiKey: process.env.OPENAI_API_KEY,
 // });
-//const openai = new OpenAIApi(configuration);
+
+// V3 to V4 update
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY // This is also the default, can be omitted
+  });
+
+  
+
 // Initialize Sequelize
-const sequelize = new Sequelize('take2_db', 'root', 'Pa55w0rd', {
+const sequelize = new Sequelize('take2_db', process.env.USERNAME_DB, process.env.PASSWORD_DB, {
     host: 'localhost',
     dialect: 'mysql'
 });
@@ -83,30 +92,51 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-const upload = multer({ dest: 'uploads/' });
+// const upload = multer({ dest: 'uploads/' });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '.mp3');
+    }
+});
+const upload = multer({ storage: storage });
+
 app.post('/api/submissions', upload.single('audio'), async (req, res) => {
     const { userId, taskId } = req.body;
     const audioUrl = req.file.path;
 
     try {
+        // Replace the following two lines with actual API calls when ready
+        const transcript = await openai.createTranscription({
+            model: 'whisper-1',
+            file: audioUrl,
+        });
+
         // const transcript = await openai.createTranscription({
         //     model: 'whisper-1',
-        //     file:audioUrl,
+        //     file: audioUrl,
         // });
-        //     const transcription = transcript.data.transcription;
+        const transcription = transcript.data.transcription;
+        console.log(transcription)
 
-         const transcription  = "Hi this take2ai evrything went well"
+        // const transcription = "Hi this is take2ai, everything went well";
+
         // Score transcript
-        // const response = await openai.Completion.create({
+        // Replace the following two lines with actual API calls when ready
+        // const response = await openai.createCompletion({
         //     model: "text-davinci-003",
         //     prompt: `Score the following text for grammatical correctness on a scale of 1 to 10:\n\n${transcription}`,
         //     max_tokens: 10,
         // });
-       // const score = parseFloat(response.choices[0].text.trim());
+        // const score = parseFloat(response.choices[0].text.trim());
 
-       const score  = 9
+        const score = 9;
 
-        const submission = await Submission.create({ userId, taskId, audioUrl, transcription, score });
+        const submission = await Submission.create({ userId, taskId, audioUrl, transcript: transcription, score });
         res.send({ submissionId: submission.id, score });
     } catch (error) {
         console.error(error);

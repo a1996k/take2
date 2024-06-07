@@ -6,7 +6,7 @@
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.10.0",
-    "openai": "^4.48.2",
+    "openai": "^4.49.1",
     "sequelize": "^6.37.3",
     "whisper": "^0.3.3"
   }
