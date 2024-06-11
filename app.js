@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const { Sequelize, DataTypes } = require('sequelize');
 // const { Configuration, OpenAIApi } = require('openai');
-// V3 to V4 update
+// OpenAIApi V3 to V4 update
 const { OpenAI } = require('openai');
 // import OpenAI from 'https://deno.land/x/openai@v4.49.1/mod.ts';
 require('dotenv').config();
@@ -108,18 +108,21 @@ const upload = multer({ storage: storage });
 app.post('/api/submissions', upload.single('audio'), async (req, res) => {
     const { userId, taskId } = req.body;
     const audioUrl = req.file.path;
+    console.log(audioUrl)
 
     try {
         // Replace the following two lines with actual API calls when ready
-        const transcript = await openai.createTranscription({
-            model: 'whisper-1',
-            file: audioUrl,
-        });
-
         // const transcript = await openai.createTranscription({
         //     model: 'whisper-1',
         //     file: audioUrl,
         // });
+
+        const transcript = await openai.audio.transcriptions.create({
+            language: "en",
+            model: 'whisper-1',
+            file: audioUrl,
+        });
+        console.log("end of transcript")
         const transcription = transcript.data.transcription;
         console.log(transcription)
 
